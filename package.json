@@ -1,0 +1,16 @@
+{
+  "name": "cognifyz-full-stack-development",
+  "version": "1.0.0",
+  "description": "A basic server-side rendering and form validation app.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "Houssein Salloum",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.0"
+  }
+}
