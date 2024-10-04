@@ -3,30 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Input Form</title>
+    <title>User Submission Form</title>
     <link rel="stylesheet" href="/styles.css" />
-    <!-- Custom CSS -->
+    <!-- Link to custom CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <!-- Bootstrap -->
   </head>
   <body>
     <!-- Header -->
     <header class="bg-primary text-white text-center py-4">
-      <h1>Welcome to the User Input Form</h1>
+      <h1>User Submission Form</h1>
     </header>
+    <!-- Login Section -->
+    <section class="container my-5">
+      <h2 class="text-center">Login</h2>
+      <form id="loginForm" class="mx-auto" style="max-width: 600px">
+        <div class="mb-3">
+          <label for="loginEmail" class="form-label">Email:</label>
+          <input
+            type="email"
+            id="loginEmail"
+            name="email"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="loginPassword" class="form-label">Password:</label>
+          <input
+            type="password"
+            id="loginPassword"
+            name="password"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+      </form>
+    </section>
 
     <!-- Form Section -->
     <section class="container my-5">
-      <h2 class="text-center">Please Fill Out Your Info</h2>
-      <form
-        action="/submit"
-        method="POST"
-        class="mx-auto"
-        style="max-width: 600px"
-      >
+      <h2 class="text-center">Submit Your Info</h2>
+      <form id="userForm" class="mx-auto" style="max-width: 600px">
         <div class="mb-3">
           <label for="name" class="form-label">Name:</label>
           <input
@@ -60,7 +83,6 @@
           />
         </div>
 
-        <!-- New Password Field with Strength Indicator -->
         <div class="mb-3">
           <label for="password" class="form-label">Password:</label>
           <input
@@ -70,12 +92,12 @@
             class="form-control"
             required
           />
-          <small id="passwordHelp" class="form-text text-muted">
-            Your password must be at least 8 characters long, contain at least
-            one uppercase letter and one number.
-          </small>
+          <small id="passwordHelp" class="form-text text-muted"
+            >Password must be at least 8 characters long, contain at least one
+            uppercase letter and one number.</small
+          >
 
-          <!-- Progress Bar -->
+          <!-- Progress Bar for Password Strength -->
           <div class="progress mt-2">
             <div
               id="passwordStrengthBar"
@@ -93,59 +115,117 @@
       </form>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4">
-      <p>&copy; 2024 My App | All Rights Reserved</p>
-    </footer>
+    <!-- Table to Display Submitted Data -->
+    <section class="container my-5">
+      <h2 class="text-center">Submitted Data</h2>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Age</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="submissionsTableBody">
+          <!-- Submitted data will be populated here dynamically -->
+        </tbody>
+      </table>
+    </section>
 
-    <!-- Inline JavaScript for complex form validation and dynamic DOM manipulation -->
+    <!-- JavaScript for Form Validation and API Interaction -->
     <script>
+      document.addEventListener("DOMContentLoaded", loadSubmissions);
+
+      // Load submissions from the API and populate the table
+      async function loadSubmissions() {
+        const response = await fetch("/api/submissions");
+        const submissions = await response.json();
+
+        const tableBody = document.getElementById("submissionsTableBody");
+        tableBody.innerHTML = ""; // Clear previous table data
+
+        submissions.forEach((submission) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td>${submission.id}</td>
+          <td>${submission.name}</td>
+          <td>${submission.email}</td>
+          <td>${submission.age}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteSubmission(${submission.id})">Delete</button></td>
+        `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Handle form submission via AJAX
+      document
+        .getElementById("userForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // Prevent page reload
+
+          const formData = new FormData(this);
+          const data = Object.fromEntries(formData.entries());
+
+          // AJAX request to submit the form
+          const response = await fetch("/submit", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            alert("Form submitted successfully!");
+            loadSubmissions(); // Reload the table with new data
+          } else {
+            const errorMessage = await response.text();
+            alert("Failed to submit the form: " + errorMessage);
+          }
+        });
+
+      // Function to delete a submission by ID
+      async function deleteSubmission(id) {
+        const response = await fetch(`/api/submissions/${id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          alert("Submission deleted successfully!");
+          loadSubmissions(); // Reload the table after deletion
+        } else {
+          alert("Failed to delete the submission.");
+        }
+      }
+
+      // Password strength validation
       const passwordInput = document.getElementById("password");
-      const passwordHelp = document.getElementById("passwordHelp");
       const passwordStrengthBar = document.getElementById(
         "passwordStrengthBar"
       );
 
-      // Function to calculate password strength
-      function calculatePasswordStrength(password) {
-        let strength = 0;
-
-        // Length requirement
-        if (password.length >= 8) strength += 1;
-
-        // Contains uppercase letters
-        if (/[A-Z]/.test(password)) strength += 1;
-
-        // Contains numbers
-        if (/\d/.test(password)) strength += 1;
-
-        return strength;
-      }
-
       passwordInput.addEventListener("input", function () {
         const password = passwordInput.value;
-        const strength = calculatePasswordStrength(password);
+        let strength = 0;
 
-        // Update the progress bar
+        if (password.length >= 8) strength += 1;
+        if (/[A-Z]/.test(password)) strength += 1;
+        if (/\d/.test(password)) strength += 1;
+
         passwordStrengthBar.style.width = `${(strength / 3) * 100}%`;
         passwordStrengthBar.setAttribute("aria-valuenow", (strength / 3) * 100);
 
-        // Update color and feedback based on strength
         if (strength === 1) {
           passwordStrengthBar.classList.add("bg-danger");
           passwordStrengthBar.classList.remove("bg-warning", "bg-success");
-          passwordHelp.textContent = "Weak password";
-          passwordHelp.style.color = "red";
         } else if (strength === 2) {
           passwordStrengthBar.classList.add("bg-warning");
           passwordStrengthBar.classList.remove("bg-danger", "bg-success");
-          passwordHelp.textContent = "Medium strength password";
-          passwordHelp.style.color = "orange";
         } else if (strength === 3) {
           passwordStrengthBar.classList.add("bg-success");
           passwordStrengthBar.classList.remove("bg-danger", "bg-warning");
-          passwordHelp.textContent = "Strong password";
-          passwordHelp.style.color = "green";
         } else {
           passwordStrengthBar.classList.remove(
             "bg-danger",
@@ -153,33 +233,35 @@
             "bg-success"
           );
           passwordStrengthBar.style.width = "0%";
-          passwordHelp.textContent =
-            "Your password must be at least 8 characters long, contain at least one uppercase letter and one number.";
-          passwordHelp.style.color = "";
         }
       });
 
-      // Handle form submission without reloading the page
+      //<!-- JavaScript for login form submission -->
+
       document
-        .querySelector("form")
-        .addEventListener("submit", function (event) {
-          event.preventDefault(); // Prevent form from reloading the page
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // Prevent page reload
 
           const formData = new FormData(this);
           const data = Object.fromEntries(formData.entries());
 
-          // Validate password and age
-          const passwordPattern = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
-          if (!passwordPattern.test(data.password) || data.age < 18) {
-            alert("Form validation failed. Please check your inputs.");
-            return;
-          }
+          // AJAX request to login
+          const response = await fetch("/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
 
-          // Simulate an AJAX request (you can use `fetch` or `axios` for real submissions)
-          setTimeout(() => {
-            // Simulate success response
-            document.body.innerHTML = `<h1>Thank you, ${data.name}!</h1><p>Your form has been submitted successfully.</p>`;
-          }, 1000);
+          if (response.ok) {
+            const message = await response.text();
+            alert(message); // Display the success message
+          } else {
+            const errorMessage = await response.text();
+            alert("Login failed: " + errorMessage);
+          }
         });
     </script>
   </body>
