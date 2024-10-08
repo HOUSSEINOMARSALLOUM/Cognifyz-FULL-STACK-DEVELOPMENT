@@ -132,6 +132,28 @@
           <!-- Submitted data will be populated here dynamically -->
         </tbody>
       </table>
+      <!-- Weather Section -->
+      <section class="container my-5">
+        <h2 class="text-center">Check Weather</h2>
+        <form id="weatherForm" class="mx-auto" style="max-width: 600px">
+          <div class="mb-3">
+            <label for="city" class="form-label">Enter City:</label>
+            <input
+              type="text"
+              id="city"
+              name="city"
+              class="form-control"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            Get Weather
+          </button>
+        </form>
+
+        <!-- Display weather data -->
+        <div id="weatherResult" class="mt-4"></div>
+      </section>
     </section>
 
     <!-- JavaScript for Form Validation and API Interaction -->
@@ -261,6 +283,27 @@
           } else {
             const errorMessage = await response.text();
             alert("Login failed: " + errorMessage);
+          }
+        });
+      // Handle weather form submission via AJAX
+      document
+        .getElementById("weatherForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // Prevent page reload
+
+          const city = document.getElementById("city").value;
+          const response = await fetch(`/weather/${city}`);
+
+          if (response.ok) {
+            const weatherData = await response.json();
+            document.getElementById("weatherResult").innerHTML = `
+        <h4>Weather in ${weatherData.city}</h4>
+        <p>Temperature: ${weatherData.temperature}°C</p>
+        <p>Description: ${weatherData.description}</p>
+      `;
+          } else {
+            document.getElementById("weatherResult").textContent =
+              "Failed to fetch weather data.";
           }
         });
     </script>

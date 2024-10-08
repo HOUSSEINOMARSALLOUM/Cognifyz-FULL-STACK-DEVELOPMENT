@@ -3,6 +3,10 @@ const express = require("express");
 const mongoose = require("mongoose"); // MongoDB for database
 const bcrypt = require("bcrypt"); // For password hashing
 const app = express();
+const axios = require('axios');
+const rateLimit = require('express-rate-limit');
+const passport = require('passport');
+const GitHubStrategy = require('passport-github').Strategy;
 const port = 3000;
 
 // Middleware to parse incoming form data (URL-encoded and JSON)
@@ -104,6 +108,68 @@ app.post("/login", async (req, res) => {
 
   res.send(`Welcome back, ${user.name}!`); // Login successful
 });
+
+
+
+// Fetch weather data from the OpenWeather API
+app.get('/weather/:city', async (req, res) => {
+  const city = req.params.city;
+  const apiKey = 'YOUR_OPENWEATHER_API_KEY'; // Replace with your actual API key
+
+  try {
+    const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`);
+    const weatherData = response.data;
+
+    res.status(200).json({
+      city: weatherData.name,
+      temperature: weatherData.main.temp,
+      description: weatherData.weather[0].description
+    });
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+    res.status(500).send('Failed to fetch weather data');
+  }
+});
+
+
+
+// Apply rate limiting to all API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // Limit each IP to 100 requests per windowMs
+});
+
+app.use('/weather', apiLimiter); // Apply rate limiting to the weather route
+
+
+
+
+// Initialize passport
+app.use(passport.initialize());
+
+// Configure GitHub OAuth strategy
+passport.use(new GitHubStrategy({
+    clientID: 'GITHUB_CLIENT_ID', // Replace with your GitHub client ID
+    clientSecret: 'GITHUB_CLIENT_SECRET', // Replace with your GitHub client secret
+    callbackURL: 'http://localhost:3000/auth/github/callback'
+  },
+  function(accessToken, refreshToken, profile, done) {
+    // Optionally save the user profile to the database
+    // For now, return the GitHub profile
+    return done(null, profile);
+  }
+));
+
+// GitHub OAuth routes
+app.get('/auth/github',
+  passport.authenticate('github'));
+
+app.get('/auth/github/callback', 
+  passport.authenticate('github', { failureRedirect: '/' }),
+  (req, res) => {
+    // Successful authentication, redirect to the dashboard or another page
+    res.redirect('/dashboard');
+  });
 
 // Start the server
 app.listen(port, () => {
