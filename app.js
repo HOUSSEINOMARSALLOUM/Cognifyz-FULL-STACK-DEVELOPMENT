@@ -1,11 +1,21 @@
 // app.js
 const express = require("express");
-const mongoose = require("mongoose"); // Import mongoose
-const bcrypt = require("bcrypt"); // Import bcrypt for password hashing
+const mongoose = require("mongoose"); // MongoDB for database
+const bcrypt = require("bcrypt"); // For password hashing
 const app = express();
 const port = 3000;
 
-// Connect to MongoDB
+// Middleware to parse incoming form data (URL-encoded and JSON)
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Set EJS as the templating engine
+app.set("view engine", "ejs");
+
+// Serve static files from the "public" folder
+app.use(express.static("public"));
+
+// Connect to MongoDB (replace 'userApp' with your DB name)
 mongoose
   .connect("mongodb://localhost:27017/userApp", {
     useNewUrlParser: true,
@@ -14,17 +24,7 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Could not connect to MongoDB", err));
 
-// Set EJS as the templating engine
-app.set("view engine", "ejs");
-
-// Middleware to parse incoming form data (URL-encoded and JSON)
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// Serve static files from the "public" folder
-app.use(express.static("public"));
-
-// Define Mongoose schema for form submissions
+// Mongoose schema for user data
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -32,56 +32,61 @@ const userSchema = new mongoose.Schema({
   password: String,
 });
 
-// Create a model from the schema
+// Create a model based on the schema
 const User = mongoose.model("User", userSchema);
+
+// Serve the main form page (index.ejs) on the root path
+app.get("/", (req, res) => {
+  res.render("index"); // Ensure 'index.ejs' is in the 'views' folder
+});
 
 // Handle form submission and store data in MongoDB
 app.post("/submit", async (req, res) => {
   const { name, email, age, password } = req.body;
 
-  // Server-side validation
+  // Validate the form data
   if (!name || !email || !age || age < 18 || !password) {
     return res
       .status(400)
       .send("All fields are required, and you must be at least 18.");
   }
 
-  // Password validation: at least 8 characters, one uppercase letter, one number
+  // Password validation (at least 8 characters, one uppercase letter, one number)
   const passwordPattern = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
   if (!passwordPattern.test(password)) {
     return res.status(400).send("Invalid password format.");
   }
 
-  // Hash the password using bcrypt
+  // Hash the password before storing it
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // Save the new user to the database
+  // Create a new user entry in MongoDB
   const newUser = new User({
     name,
     email,
     age,
-    password: hashedPassword, // Save the hashed password
+    password: hashedPassword, // Save hashed password
   });
 
-  await newUser.save(); // Save to MongoDB
-  res.status(201).json(newUser);
+  await newUser.save(); // Save user in MongoDB
+  res.status(201).json(newUser); // Respond with the created user
 });
 
 // API to fetch all submitted form data
 app.get("/api/submissions", async (req, res) => {
-  const users = await User.find(); // Fetch users from MongoDB
+  const users = await User.find(); // Fetch all users from MongoDB
   res.status(200).json(users);
 });
 
 // API to delete a submission by ID
 app.delete("/api/submissions/:id", async (req, res) => {
-  const { id } = req.params;
-  await User.findByIdAndDelete(id); // Delete the user by ID
+  const id = req.params.id;
+  await User.findByIdAndDelete(id); // Delete user by ID
   res.status(204).send(); // No content
 });
 
-// Login route
+// Handle login request
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -91,13 +96,13 @@ app.post("/login", async (req, res) => {
     return res.status(400).send("User not found.");
   }
 
-  // Compare the entered password with the hashed password
+  // Compare entered password with hashed password in the database
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) {
     return res.status(400).send("Invalid password.");
   }
 
-  res.send(`Welcome back, ${user.name}!`);
+  res.send(`Welcome back, ${user.name}!`); // Login successful
 });
 
 // Start the server
