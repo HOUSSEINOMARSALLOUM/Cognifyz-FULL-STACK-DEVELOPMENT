@@ -1,311 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Submission Form</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <!-- Link to custom CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <!-- Header -->
-    <header class="bg-primary text-white text-center py-4">
-      <h1>User Submission Form</h1>
-    </header>
-    <!-- Login Section -->
-    <section class="container my-5">
-      <h2 class="text-center">Login</h2>
-      <form id="loginForm" class="mx-auto" style="max-width: 600px">
-        <div class="mb-3">
-          <label for="loginEmail" class="form-label">Email:</label>
-          <input
-            type="email"
-            id="loginEmail"
-            name="email"
-            class="form-control"
-            required
-          />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Submission Form</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="bg-primary text-white text-center py-4">
+    <h1>User Submission Form</h1>
+  </header>
+
+  <!-- Login Section -->
+  <section class="container my-5">
+    <h2 class="text-center">Login</h2>
+    <form id="loginForm" class="mx-auto" style="max-width: 600px;">
+      <div class="mb-3">
+        <label for="loginEmail" class="form-label">Email:</label>
+        <input type="email" id="loginEmail" name="email" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="loginPassword" class="form-label">Password:</label>
+        <input type="password" id="loginPassword" name="password" class="form-control" required />
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Login</button>
+    </form>
+  </section>
+
+  <!-- Form Section -->
+  <section class="container my-5">
+    <h2 class="text-center">Submit Your Info</h2>
+    <form id="userForm" class="mx-auto" style="max-width: 600px;">
+      <div class="mb-3">
+        <label for="name" class="form-label">Name:</label>
+        <input type="text" id="name" name="name" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email:</label>
+        <input type="email" id="email" name="email" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="age" class="form-label">Age:</label>
+        <input type="number" id="age" name="age" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password:</label>
+        <input type="password" id="password" name="password" class="form-control" required />
+        <small id="passwordHelp" class="form-text text-muted">
+          Password must be at least 8 characters long, contain at least one uppercase letter and one number.
+        </small>
+        <!-- Progress Bar for Password Strength -->
+        <div class="progress mt-2">
+          <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
+      </div>
+      <button type="submit" class="btn btn-success w-100">Submit</button>
+    </form>
+  </section>
 
-        <div class="mb-3">
-          <label for="loginPassword" class="form-label">Password:</label>
-          <input
-            type="password"
-            id="loginPassword"
-            name="password"
-            class="form-control"
-            required
-          />
-        </div>
+  <!-- Table to Display Submitted Data -->
+  <section class="container my-5">
+    <h2 class="text-center">Submitted Data</h2>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Age</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="submissionsTableBody">
+        <!-- Submitted data will be populated here dynamically -->
+      </tbody>
+    </table>
+  </section>
 
-        <button type="submit" class="btn btn-primary w-100">Login</button>
-      </form>
-    </section>
+  <!-- Weather Section -->
+  <section class="container my-5">
+    <h2 class="text-center">Check Weather</h2>
+    <form id="weatherForm" class="mx-auto" style="max-width: 600px;">
+      <div class="mb-3">
+        <label for="city" class="form-label">Enter City:</label>
+        <input type="text" id="city" name="city" class="form-control" required />
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Get Weather</button>
+    </form>
+    <!-- Display weather data -->
+    <div id="weatherResult" class="mt-4"></div>
+  </section>
 
-    <!-- Form Section -->
-    <section class="container my-5">
-      <h2 class="text-center">Submit Your Info</h2>
-      <form id="userForm" class="mx-auto" style="max-width: 600px">
-        <div class="mb-3">
-          <label for="name" class="form-label">Name:</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            class="form-control"
-            required
-          />
-        </div>
+  <!-- JavaScript for Form Validation and API Interaction -->
+  <script>
+    // Load submissions from the API
+    async function loadSubmissions() {
+      const response = await fetch('/api/submissions');
+      const submissions = await response.json();
+      const tableBody = document.getElementById('submissionsTableBody');
+      tableBody.innerHTML = '';
 
-        <div class="mb-3">
-          <label for="email" class="form-label">Email:</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            class="form-control"
-            required
-          />
-        </div>
-
-        <div class="mb-3">
-          <label for="age" class="form-label">Age:</label>
-          <input
-            type="number"
-            id="age"
-            name="age"
-            class="form-control"
-            required
-          />
-        </div>
-
-        <div class="mb-3">
-          <label for="password" class="form-label">Password:</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            class="form-control"
-            required
-          />
-          <small id="passwordHelp" class="form-text text-muted"
-            >Password must be at least 8 characters long, contain at least one
-            uppercase letter and one number.</small
-          >
-
-          <!-- Progress Bar for Password Strength -->
-          <div class="progress mt-2">
-            <div
-              id="passwordStrengthBar"
-              class="progress-bar"
-              role="progressbar"
-              style="width: 0%"
-              aria-valuenow="0"
-              aria-valuemin="0"
-              aria-valuemax="100"
-            ></div>
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-success w-100">Submit</button>
-      </form>
-    </section>
-
-    <!-- Table to Display Submitted Data -->
-    <section class="container my-5">
-      <h2 class="text-center">Submitted Data</h2>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Age</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="submissionsTableBody">
-          <!-- Submitted data will be populated here dynamically -->
-        </tbody>
-      </table>
-      <!-- Weather Section -->
-      <section class="container my-5">
-        <h2 class="text-center">Check Weather</h2>
-        <form id="weatherForm" class="mx-auto" style="max-width: 600px">
-          <div class="mb-3">
-            <label for="city" class="form-label">Enter City:</label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              class="form-control"
-              required
-            />
-          </div>
-          <button type="submit" class="btn btn-primary w-100">
-            Get Weather
-          </button>
-        </form>
-
-        <!-- Display weather data -->
-        <div id="weatherResult" class="mt-4"></div>
-      </section>
-    </section>
-
-    <!-- JavaScript for Form Validation and API Interaction -->
-    <script>
-      document.addEventListener("DOMContentLoaded", loadSubmissions);
-
-      // Load submissions from the API and populate the table
-      async function loadSubmissions() {
-        const response = await fetch("/api/submissions");
-        const submissions = await response.json();
-
-        const tableBody = document.getElementById("submissionsTableBody");
-        tableBody.innerHTML = ""; // Clear previous table data
-
-        submissions.forEach((submission) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-          <td>${submission.id}</td>
+      submissions.forEach((submission) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${submission._id}</td>
           <td>${submission.name}</td>
           <td>${submission.email}</td>
           <td>${submission.age}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="deleteSubmission(${submission.id})">Delete</button></td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteSubmission('${submission._id}')">Delete</button></td>
         `;
-          tableBody.appendChild(row);
-        });
-      }
-
-      // Handle form submission via AJAX
-      document
-        .getElementById("userForm")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // Prevent page reload
-
-          const formData = new FormData(this);
-          const data = Object.fromEntries(formData.entries());
-
-          // AJAX request to submit the form
-          const response = await fetch("/submit", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-
-          if (response.ok) {
-            alert("Form submitted successfully!");
-            loadSubmissions(); // Reload the table with new data
-          } else {
-            const errorMessage = await response.text();
-            alert("Failed to submit the form: " + errorMessage);
-          }
-        });
-
-      // Function to delete a submission by ID
-      async function deleteSubmission(id) {
-        const response = await fetch(`/api/submissions/${id}`, {
-          method: "DELETE",
-        });
-
-        if (response.ok) {
-          alert("Submission deleted successfully!");
-          loadSubmissions(); // Reload the table after deletion
-        } else {
-          alert("Failed to delete the submission.");
-        }
-      }
-
-      // Password strength validation
-      const passwordInput = document.getElementById("password");
-      const passwordStrengthBar = document.getElementById(
-        "passwordStrengthBar"
-      );
-
-      passwordInput.addEventListener("input", function () {
-        const password = passwordInput.value;
-        let strength = 0;
-
-        if (password.length >= 8) strength += 1;
-        if (/[A-Z]/.test(password)) strength += 1;
-        if (/\d/.test(password)) strength += 1;
-
-        passwordStrengthBar.style.width = `${(strength / 3) * 100}%`;
-        passwordStrengthBar.setAttribute("aria-valuenow", (strength / 3) * 100);
-
-        if (strength === 1) {
-          passwordStrengthBar.classList.add("bg-danger");
-          passwordStrengthBar.classList.remove("bg-warning", "bg-success");
-        } else if (strength === 2) {
-          passwordStrengthBar.classList.add("bg-warning");
-          passwordStrengthBar.classList.remove("bg-danger", "bg-success");
-        } else if (strength === 3) {
-          passwordStrengthBar.classList.add("bg-success");
-          passwordStrengthBar.classList.remove("bg-danger", "bg-warning");
-        } else {
-          passwordStrengthBar.classList.remove(
-            "bg-danger",
-            "bg-warning",
-            "bg-success"
-          );
-          passwordStrengthBar.style.width = "0%";
-        }
+        tableBody.appendChild(row);
       });
+    }
 
-      //<!-- JavaScript for login form submission -->
+    // Handle form submission
+    document.getElementById('userForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      const response = await fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (response.ok) {
+        alert('Form submitted successfully!');
+        loadSubmissions();
+      } else {
+        alert('Failed to submit the form.');
+      }
+    });
 
-      document
-        .getElementById("loginForm")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // Prevent page reload
+    // Handle weather form submission
+    document.getElementById('weatherForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const city = document.getElementById('city').value;
+      const response = await fetch(`/weather/${city}`);
+      if (response.ok) {
+        const weatherData = await response.json();
+        document.getElementById('weatherResult').innerHTML = `
+          <h4>Weather in ${weatherData.city}</h4>
+          <p>Temperature: ${weatherData.temperature}°C</p>
+          <p>Description: ${weatherData.description}</p>
+        `;
+      } else {
+        document.getElementById('weatherResult').textContent = 'Failed to fetch weather data.';
+      }
+    });
 
-          const formData = new FormData(this);
-          const data = Object.fromEntries(formData.entries());
-
-          // AJAX request to login
-          const response = await fetch("/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-
-          if (response.ok) {
-            const message = await response.text();
-            alert(message); // Display the success message
-          } else {
-            const errorMessage = await response.text();
-            alert("Login failed: " + errorMessage);
-          }
-        });
-      // Handle weather form submission via AJAX
-      document
-        .getElementById("weatherForm")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // Prevent page reload
-
-          const city = document.getElementById("city").value;
-          const response = await fetch(`/weather/${city}`);
-
-          if (response.ok) {
-            const weatherData = await response.json();
-            document.getElementById("weatherResult").innerHTML = `
-        <h4>Weather in ${weatherData.city}</h4>
-        <p>Temperature: ${weatherData.temperature}°C</p>
-        <p>Description: ${weatherData.description}</p>
-      `;
-          } else {
-            document.getElementById("weatherResult").textContent =
-              "Failed to fetch weather data.";
-          }
-        });
-    </script>
-  </body>
+    // Load submissions on page load
+    document.addEventListener('DOMContentLoaded', loadSubmissions);
+  </script>
+</body>
 </html>
